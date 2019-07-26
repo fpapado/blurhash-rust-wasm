@@ -4,7 +4,7 @@ A Rust implementation of the [blurhash algorithm](https://blurha.sh/).
 
 This crate is a work in progress!
 
-## Usage from JS
+## Usage in JS
 
 ```js
 import blurhash from "blurhash";

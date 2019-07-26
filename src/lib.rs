@@ -1,9 +1,37 @@
-use std::f64::consts::PI;
+mod utils;
 
-#[derive(PartialEq, Debug)]
+use std::f64::consts::PI;
+use wasm_bindgen::prelude::*;
+
+// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+// allocator.
+#[cfg(feature = "wee_alloc")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+// TODO: Use failure
+// TODO: Use format the error in wasm_decode
+
+// TODO: define repr()
+#[wasm_bindgen]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     LengthInvalid,
     LengthMismatch,
+}
+
+// Decode for WASM target
+// It is similar to decode, but uses a JsValue for the Error
+// I could not figure out a good way to use the Error in the regular decode,
+// and was getting a E0277 for not being able to convert.
+// This seems to be an open topic atm, so a separate decode seems ok for now :)
+// @see https://github.com/rustwasm/wasm-bindgen/issues/1017
+#[wasm_bindgen(js_name = "decode")]
+pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
+    match decode(blur_hash, width, height) {
+        Ok(img) => Ok(img),
+        Err(_err) => Err(JsValue::from_str("Could not create decode")),
+    }
 }
 
 pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, Error> {
