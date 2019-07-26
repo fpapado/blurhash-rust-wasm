@@ -1,8 +1,12 @@
 [package]
 name = "blurhash"
 version = "0.1.0"
-authors = ["fpapado <fotis@futurice.com>"]
+authors = ["fpapado <fgpapado@gmail.com>"]
 edition = "2018"
+
+description = "A Rust implementation of the blurhash algorithm"
+repository = "https://github.com/fpapado/rust-blurhash"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
