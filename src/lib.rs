@@ -1,12 +1,37 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
+mod utils;
 
 use std::f64::consts::PI;
+use wasm_bindgen::prelude::*;
 
-#[derive(PartialEq, Debug)]
+// When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+// allocator.
+#[cfg(feature = "wee_alloc")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
+// TODO: Use failure
+// TODO: Use format the error in wasm_decode
+
+// TODO: define repr()
+#[wasm_bindgen]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     LengthInvalid,
     LengthMismatch,
+}
+
+// Decode for WASM target
+// It is similar to decode, but uses a JsValue for the Error
+// I could not figure out a good way to use the Error in the regular decode,
+// and was getting a E0277 for not being able to convert.
+// This seems to be an open topic atm, so a separate decode seems ok for now :)
+// @see https://github.com/rustwasm/wasm-bindgen/issues/1017
+#[wasm_bindgen(js_name = "decode")]
+pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
+    match decode(blur_hash, width, height) {
+        Ok(img) => Ok(img),
+        Err(_err) => Err(JsValue::from_str("Could not create decode")),
+    }
 }
 
 pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, Error> {
@@ -52,7 +77,10 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
     }
 
     // Now, construct the image
-    let bytes_per_row = width * 3;
+    // NOTE: We include an alpha channel of 255 as well, because
+    // it is more convenient for various representations (browser canvas, for example).
+    // This could probably be configured
+    let bytes_per_row = width * 4;
 
     let mut pixels = vec![0; bytes_per_row * height];
 
@@ -77,9 +105,10 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
             let int_g = linear_to_srgb(g);
             let int_b = linear_to_srgb(b);
 
-            pixels[3 * x + 0 + y * bytes_per_row] = int_r;
-            pixels[3 * x + 1 + y * bytes_per_row] = int_g;
-            pixels[3 * x + 2 + y * bytes_per_row] = int_b;
+            pixels[4 * x + 0 + y * bytes_per_row] = int_r;
+            pixels[4 * x + 1 + y * bytes_per_row] = int_g;
+            pixels[4 * x + 2 + y * bytes_per_row] = int_b;
+            pixels[4 * x + 3 + y * bytes_per_row] = 255;
         }
     }
 
