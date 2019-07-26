@@ -77,7 +77,10 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
     }
 
     // Now, construct the image
-    let bytes_per_row = width * 3;
+    // NOTE: We include an alpha channel of 255 as well, because
+    // it is more convenient for various representations (browser canvas, for example).
+    // This could probably be configured
+    let bytes_per_row = width * 4;
 
     let mut pixels = vec![0; bytes_per_row * height];
 
@@ -102,9 +105,10 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
             let int_g = linear_to_srgb(g);
             let int_b = linear_to_srgb(b);
 
-            pixels[3 * x + 0 + y * bytes_per_row] = int_r;
-            pixels[3 * x + 1 + y * bytes_per_row] = int_g;
-            pixels[3 * x + 2 + y * bytes_per_row] = int_b;
+            pixels[4 * x + 0 + y * bytes_per_row] = int_r;
+            pixels[4 * x + 1 + y * bytes_per_row] = int_g;
+            pixels[4 * x + 2 + y * bytes_per_row] = int_b;
+            pixels[4 * x + 3 + y * bytes_per_row] = 255;
         }
     }
 

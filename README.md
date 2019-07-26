@@ -7,10 +7,10 @@ This crate is a work in progress!
 ## Usage in JS
 
 ```js
-import blurhash from "blurhash";
+import * as blurhash from "blurhash";
 
 // Returned as Uint8Array
-const arr = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
+const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
 
 // You can use this to construct src- or canvas- compatible resources
 // WIP
