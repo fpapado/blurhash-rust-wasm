@@ -5,7 +5,7 @@ authors = ["fpapado <fgpapado@gmail.com>"]
 edition = "2018"
 
 description = "A Rust and WASM implementation of the blurhash algorithm"
-repository = "https://github.com/fpapado/rust-blurhash"
+repository = "https://github.com/fpapado/blurhash-rust-wasm"
 license = "MIT"
 
 [lib]

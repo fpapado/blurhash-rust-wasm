@@ -10,10 +10,9 @@ use wasm_bindgen::prelude::*;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 // TODO: Use failure
-// TODO: Use format the error in wasm_decode
+// TODO: Use format for the error in wasm_decode
+// TODO: Add adjustable 'punch'
 
-// TODO: define repr()
-#[wasm_bindgen]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     LengthInvalid,
@@ -30,7 +29,7 @@ pub enum Error {
 pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
     match decode(blur_hash, width, height) {
         Ok(img) => Ok(img),
-        Err(_err) => Err(JsValue::from_str("Could not create decode")),
+        Err(_err) => Err(JsValue::from_str("The length of the supplied string is invalid.")),
     }
 }
 
@@ -71,14 +70,13 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
         } else {
             // 4. AC components, 2 digits each, nx * ny - 1 components in total.
             let value = decode_base83_string(blur_hash.get((4 + i * 2)..(4 + i * 2 + 2)).unwrap());
-            // TODO: Adjustable 'punch'
             colours.push(decode_ac(value, maximum_value * 1.0));
         }
     }
 
     // Now, construct the image
-    // NOTE: We include an alpha channel of 255 as well, because
-    // it is more convenient for various representations (browser canvas, for example).
+    // NOTE: We include an alpha channel of 255 as well, because it is more convenient,
+    // for various representations (browser canvas, for example).
     // This could probably be configured
     let bytes_per_row = width * 4;
 
@@ -169,6 +167,7 @@ fn srgb_to_linear(value: usize) -> f64 {
     }
 }
 
+// TODO: Consider using lazy_static to expand this, or even write long-hand
 const ENCODE_CHARACTERS: &str =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~";
 

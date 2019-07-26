@@ -1,7 +1,8 @@
 # blurhash-rust-wasm
 
-A Rust implementation of the [blurhash algorithm](https://blurha.sh/).
-It is compiled to WebAssembly (WASM), and available on npm.
+A Rust implementation of the [blurhash algorithm](https://github.com/woltapp/blurhash).
+
+It is compiled to WebAssembly (WASM), and [available on npm as `blurhash-wasm`](https://npmjs.com/blurhast-wasm).
 
 ## Usage in JS
 
@@ -22,7 +23,7 @@ Not yet implemented :)
 ## decode
 
 ```rust
-use blurhash;
+use blurhash_wasm;
 
 // Result<Vec<u8>, blurhash::Error>
 let res = blurhash::decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
