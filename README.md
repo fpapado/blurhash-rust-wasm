@@ -1,9 +1,7 @@
-# rust-blurhash
+# blurhash-rust-wasm
 
 A Rust implementation of the [blurhash algorithm](https://blurha.sh/).
-It is also compiled to WebAssembly (WASM), and available on npm.
-
-This crate is a work in progress!
+It is compiled to WebAssembly (WASM), and available on npm.
 
 ## Usage in JS
 
@@ -11,11 +9,13 @@ This crate is a work in progress!
 import * as blurhash from "blurhash";
 
 // Returned as Uint8Array
+// You can use this to construct canvas-compatible resources
 const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
-
-// You can use this to construct src- or canvas- compatible resources
-// WIP
 ```
+
+## encode
+
+Not yet implemented :)
 
 ## Usage in Rust
 
