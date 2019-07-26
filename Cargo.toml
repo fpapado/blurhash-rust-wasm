@@ -1,5 +1,5 @@
 [package]
-name = "wasm-blurhash"
+name = "blurhash-wasm"
 version = "0.1.0"
 authors = ["fpapado <fgpapado@gmail.com>"]
 edition = "2018"
