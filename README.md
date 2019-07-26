@@ -1,6 +1,7 @@
 # rust-blurhash
 
 A Rust implementation of the [blurhash algorithm](https://blurha.sh/).
+It is also compiled to WebAssembly (WASM), and available on npm.
 
 This crate is a work in progress!
 
