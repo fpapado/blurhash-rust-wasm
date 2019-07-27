@@ -26,7 +26,7 @@ The [demo app source](/demo) has a complete example of using `blurhash-wasm`.
 ```js
 import * as blurhash from "blurhash-wasm";
 
-// Returned as Uint8Array
+// Returned as Uint8Array | undefined
 // You can use this to construct canvas-compatible resources
 const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
 ```

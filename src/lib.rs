@@ -19,19 +19,24 @@ pub enum Error {
     LengthMismatch,
 }
 
-// Decode for WASM target
-// It is similar to decode, but uses a JsValue for the Error
-// I could not figure out a good way to use the Error in the regular decode,
-// and was getting a E0277 for not being able to convert.
-// This seems to be an open topic atm, so a separate decode seems ok for now :)
-// @see https://github.com/rustwasm/wasm-bindgen/issues/1017
+/* Decode for WASM target
+ * It is similar to `decode`, but uses an option for the Error
+ * I could not figure out a good way to use the Error in the regular decode,
+ * and was getting a E0277 or not being able to convert automatically.
+
+ * There are two current options, afaict:
+ *  1) Result E be a JsValue with hardcoded (or formatted) strings.
+ *  2) Transform the Result to Option, which on failure would be undefined in JS.
+
+ * For convenience, I went with 2), until we can return Error.
+ * This seems to be an open topic atm, so a separate decode seems ok for now :)
+ * @see https://github.com/rustwasm/wasm-bindgen/issues/1017
+*/
 #[wasm_bindgen(js_name = "decode")]
-pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
+pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Option<Vec<u8>> {
     match decode(blur_hash, width, height) {
-        Ok(img) => Ok(img),
-        Err(_err) => Err(JsValue::from_str(
-            "The length of the supplied string is invalid.",
-        )),
+        Ok(img) => Some(img),
+        Err(_err) => None,
     }
 }
 
