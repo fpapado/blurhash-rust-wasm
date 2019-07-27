@@ -26,14 +26,18 @@
       p, li, h1, h2 {
         max-width: 36em;
       }
+      pre {
+        padding: 1rem;
+        overflow-x: auto;
+        -webkit-overflow-scroll: touch;
+        border-radius: 4px;
+        background-color: #e8e7f7;
+      }
       a:link, a:visited {
         transition: color 0.12s ease;
-        color: var(--blue);
-      }
-      a:hover, a:focus {
         color: var(--indigo);
       }
-      a:active {
+      a:hover, a:focus, a:active {
         color: var(--indigo-darker);
       }
       canvas {

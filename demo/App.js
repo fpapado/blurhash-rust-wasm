@@ -11,7 +11,7 @@ export function App(props) {
     <main className="pa3 vs4 mw8 center">
       <Pitch />
       <div className="vs3">
-        <h2>Demo</h2>
+        <h2 id="demo">Demo</h2>
         {images.map(image => (
           <div className="mb5">
             <div className="mb3 mw6">
@@ -100,6 +100,7 @@ function Pitch() {
     <div className="vs4">
       <div>
         <h1>Rust Wasm Blurhash</h1>
+        <a href="#demo">Skip to Demo</a>
         <p>
           A Rust and WebAssembly implementation of the{" "}
           <a href="https://blurha.sh">blurhash algorithm</a>.
@@ -116,6 +117,18 @@ function Pitch() {
           bundling.
         </p>
       </div>
+      <pre>
+        <code>{`npm install blurhash-wasm`}</code>
+      </pre>
+      <pre>
+        <code>{`import * as blurhash from "blurhash-wasm";
+
+// Returned as Uint8Array | undefined
+// You can use this to construct canvas-compatible resources
+const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
+`}
+        </code>
+      </pre>
       <div className="vs3">
         <h2>Credits</h2>
         <ul className="vs2">
