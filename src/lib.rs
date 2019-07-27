@@ -1,5 +1,8 @@
+#![allow(exceeding_bitshifts)]
 mod utils;
 
+use std::cmp::Ordering;
+use std::convert::TryFrom;
 use std::f64::consts::PI;
 use wasm_bindgen::prelude::*;
 
@@ -21,8 +24,10 @@ pub enum Error {
 }
 
 pub enum EncodingError {
-    MaxComponents,
+    ComponentsNumberInvalid,
 }
+
+// Decode
 
 /* Decode for WASM target
  * It is similar to `decode`, but uses an option for the Error
@@ -115,24 +120,14 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
             let int_g = linear_to_srgb(g);
             let int_b = linear_to_srgb(b);
 
-            pixels[4 * x + 0 + y * bytes_per_row] = int_r;
-            pixels[4 * x + 1 + y * bytes_per_row] = int_g;
-            pixels[4 * x + 2 + y * bytes_per_row] = int_b;
-            pixels[4 * x + 3 + y * bytes_per_row] = 255;
+            pixels[4 * x + 0 + y * bytes_per_row] = int_r as u8;
+            pixels[4 * x + 1 + y * bytes_per_row] = int_g as u8;
+            pixels[4 * x + 2 + y * bytes_per_row] = int_b as u8;
+            pixels[4 * x + 3 + y * bytes_per_row] = 255 as u8;
         }
     }
 
     Ok(pixels)
-}
-
-pub fn encode(
-    pixels: Vec<u8>,
-    cx: u32,
-    cy: u32,
-    width: u32,
-    hieght: u32,
-) -> Result<String, EncodingError> {
-    unimplemented!();
 }
 
 fn decode_dc(value: usize) -> [f64; 3] {
@@ -171,12 +166,12 @@ fn get_sign(n: f64) -> f64 {
     }
 }
 
-fn linear_to_srgb(value: f64) -> u8 {
+fn linear_to_srgb(value: f64) -> usize {
     let v = f64::max(0f64, f64::min(1f64, value));
     if v <= 0.0031308 {
-        return (v * 12.92 * 255f64 + 0.5) as u8;
+        return (v * 12.92 * 255f64 + 0.5) as usize;
     } else {
-        return ((1.055 * f64::powf(v, 1f64 / 2.4) - 0.055) * 255f64 + 0.5) as u8;
+        return ((1.055 * f64::powf(v, 1f64 / 2.4) - 0.055) * 255f64 + 0.5) as usize;
     }
 }
 
@@ -188,6 +183,166 @@ fn srgb_to_linear(value: usize) -> f64 {
         return ((v + 0.055) / 1.055).powf(2.4);
     }
 }
+
+// Encode
+
+pub fn encode(
+    pixels: Vec<u8>,
+    cx: usize,
+    cy: usize,
+    width: usize,
+    height: usize,
+) -> Result<String, EncodingError> {
+    // NOTE: We could clamp instead of Err.
+    // The TS version does that. Not sure which one is better.
+    // We also could (should?) be checking for the color space
+    if cx < 1 || cx > 9 || cy < 1 || cy > 9 {
+        return Err(EncodingError::ComponentsNumberInvalid);
+    }
+
+    // Should we assume RGBA for round-trips? Or does it not matter?
+    let bytes_per_row = width * 4;
+    let bytes_per_pixel = 4;
+
+    let mut dc: [f64; 3] = [0., 0., 0.];
+    let mut ac: Vec<[f64; 3]> = Vec::new();
+
+    for y in 0..cy {
+        for x in 0..cx {
+            let normalisation = if x == 0 && y == 0 { 1f64 } else { 2f64 };
+            let factor = multiply_basis_function(
+                &pixels,
+                width,
+                height,
+                bytes_per_row,
+                bytes_per_pixel,
+                0,
+                |a, b| {
+                    (normalisation
+                        * f64::cos(PI * x as f64 * a / width as f64)
+                        * f64::cos(PI * y as f64 * b / height as f64))
+                },
+            );
+
+            if x == 0 && y == 0 {
+                dc = factor;
+            } else {
+                ac.push(factor);
+            }
+        }
+    }
+
+    let mut hash = String::from("");
+
+    let sizeFlag = ((cx - 1) + (cy - 1) * 9) as usize;
+    hash += &encode_base83_string(sizeFlag, 1);
+
+    let maximum_value: f64;
+
+    if ac.len() > 0 {
+        // I'm sure there's a better way to write this; following the Swift atm :)
+        let actualMaximumValue = ac
+            .clone()
+            .into_iter()
+            .map(|[a, b, c]| f64::max(f64::max(f64::abs(a), f64::abs(b)), f64::abs(c)))
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
+            .unwrap();
+        let quantisedMaximumValue = usize::max(
+            0,
+            usize::min(82, f64::floor(actualMaximumValue * 166f64 - 0.5) as usize),
+        );
+        maximum_value = ((quantisedMaximumValue + 1) as f64) / 166f64;
+        hash += &encode_base83_string(quantisedMaximumValue, 1);
+    } else {
+        maximum_value = 1f64;
+        hash += &encode_base83_string(0, 1);
+    }
+
+    hash += &encode_base83_string(encode_dc(dc), 4);
+
+    for factor in ac {
+        hash += &encode_base83_string(encode_ac(factor, maximum_value), 2);
+    }
+
+    Ok(hash)
+}
+
+fn multiply_basis_function<F>(
+    pixels: &Vec<u8>,
+    width: usize,
+    height: usize,
+    bytesPerRow: usize,
+    bytesPerPixel: usize,
+    pixelOffset: usize,
+    basisFunction: F,
+) -> [f64; 3]
+where
+    F: Fn(f64, f64) -> f64,
+{
+    let mut r = 0f64;
+    let mut g = 0f64;
+    let mut b = 0f64;
+
+    for x in 0..width {
+        for y in 0..height {
+            let basis = basisFunction(x as f64, y as f64);
+            r += basis
+                * srgb_to_linear(
+                    usize::try_from(pixels[bytesPerPixel * x + pixelOffset + 0 + y * bytesPerRow])
+                        .unwrap(),
+                );
+            g += basis
+                * srgb_to_linear(
+                    usize::try_from(pixels[bytesPerPixel * x + pixelOffset + 1 + y * bytesPerRow])
+                        .unwrap(),
+                );
+            b += basis
+                * srgb_to_linear(
+                    usize::try_from(pixels[bytesPerPixel * x + pixelOffset + 2 + y * bytesPerRow])
+                        .unwrap(),
+                );
+        }
+    }
+
+    let scale = 1f64 / (width * height) as f64;
+
+    [r * scale, g * scale, b * scale]
+}
+
+fn encode_dc(value: [f64; 3]) -> usize {
+    let roundedR = linear_to_srgb(value[0]);
+    let roundedG = linear_to_srgb(value[1]);
+    let roundedB = linear_to_srgb(value[2]);
+    ((roundedR << 16) + (roundedG << 8) + roundedB) as usize
+}
+
+fn encode_ac(value: [f64; 3], maximumValue: f64) -> usize {
+    let quantR = usize::max(
+        0,
+        usize::min(
+            18,
+            f64::floor(sign_pow(value[0] / maximumValue, 0.5) * 9f64 + 9.5) as usize,
+        ),
+    );
+    let quantG = usize::max(
+        0,
+        usize::min(
+            18,
+            f64::floor(sign_pow(value[1] / maximumValue, 0.5) * 9f64 + 9.5) as usize,
+        ),
+    );
+    let quantB = usize::max(
+        0,
+        usize::min(
+            18,
+            f64::floor(sign_pow(value[2] / maximumValue, 0.5) * 9f64 + 9.5) as usize,
+        ),
+    );
+
+    (quantR * 19 * 19 + quantG * 19 + quantB) as usize
+}
+
+// Base83
 
 // TODO: Consider using lazy_static to expand this, or even write long-hand
 const ENCODE_CHARACTERS: &str =
@@ -204,6 +359,15 @@ fn decode_base83_string(string: &str) -> usize {
         }
     }
     value
+}
+
+fn encode_base83_string(value: usize, length: u32) -> String {
+    let mut result = String::from("");
+    for i in 1..length + 1 {
+        let digit = (value / usize::pow(83, length - i)) % 83;
+        result += &ENCODE_CHARACTERS.chars().nth(digit).unwrap().to_string();
+    }
+    result
 }
 
 #[cfg(test)]
