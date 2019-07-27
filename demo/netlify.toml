@@ -1,0 +1,45 @@
+# This file configures the headers and redirect rules for Netlify.
+# Some are important for the page to work correctly, and other
+# are for performance.
+# Reference: https://www.netlify.com/docs/netlify-toml-reference/
+
+# Global settings applied to the whole site.
+#
+# “base” is the directory to change to before starting build. If you set base:
+#        that is where we will look for package.json/.nvmrc/etc, not repo root!
+# “command” is your build command.
+# “publish” is the directory to publish (relative to the root of your repo).
+
+[build]
+  base    = "dist"
+  command = "npm run build"
+  publish = "demo/dist"
+
+# Redirects
+# Anything else, we redirect to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers
+[[headers]]
+  # Anything under /static is hashed, so we can cache indefinitely
+  for = "/static/*"
+
+  [headers.values]
+    cache-control = '''
+    public,
+    max-age=31536000,
+    immutable'''
+
+[[headers]]
+  # Assets under images/ are mutable, but large-ish
+  # We cache them for a short time, to avoid excessive data consumption
+  for = "/images/*"
+
+  [headers.values]
+    cache-control =  '''
+    public,
+    max-age=600,
+    must-revalidate'''

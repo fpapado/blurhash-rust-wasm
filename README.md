@@ -4,6 +4,8 @@ A Rust implementation of the [blurhash algorithm](https://github.com/woltapp/blu
 
 It is compiled to WebAssembly (WASM), and [available on npm as `blurhash-wasm`](https://npmjs.com/blurhash-wasm).
 
+[Online Demo](https://blurhash-wasm.netlify.com).
+
 ## Usage in JS
 
 ### Installation
