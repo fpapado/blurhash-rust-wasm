@@ -108,10 +108,10 @@ function Pitch() {
         </p>
         <p>
           Blurhash is "a compact representation of a placeholder for an image."
-          It allows you to store a string representation of the placeholder in
-          your database. It can then be transferred together with the initial
-          data, in order to decode and show it, before the main image request
-          has finished (or even started).
+          It enables you to store that representation in your database. It can
+          then be transferred together with the initial data, in order to decode
+          and show it, before the main image request has finished (or even
+          started).
         </p>
         <p>
           You can seamlessly use it in the browser through JS imports and
@@ -122,7 +122,8 @@ function Pitch() {
         <code>{`npm install blurhash-wasm`}</code>
       </pre>
       <pre>
-        <code>{`import * as blurhash from "blurhash-wasm";
+        <code>
+          {`import * as blurhash from "blurhash-wasm";
 
 // Returned as Uint8Array | undefined
 // You can use this to construct canvas-compatible resources
@@ -134,8 +135,9 @@ const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
         <h2>Credits</h2>
         <ul className="vs2">
           <li>
-            Blurhash was originally developed by{" "}
-            <a href="https://github.com/DagAgren">Dag Ågren</a> and now{" "}
+            The Blurhash algorithm was originally written by{" "}
+            <a href="https://github.com/DagAgren">Dag Ågren</a>. Implementations
+            are maintained by{" "}
             <a href="https://github.com/woltapp/blurhash#authors">
               folks at Wolt and outside
             </a>

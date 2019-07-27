@@ -4,6 +4,8 @@ A Rust implementation of the [blurhash algorithm](https://github.com/woltapp/blu
 
 It is compiled to WebAssembly (WASM), and [available on npm as `blurhash-wasm`](https://npmjs.com/blurhash-wasm).
 
+Blurhash is an algorithm written by [Dag Ågren](https://github.com/DagAgren) and folks at [Wolt (woltapp/blurhash)](https://github.com/woltapp/blurhash). Blurhash is "a compact representation of a placeholder for an image." It enables you to store that representation in your database. It can then be transferred together with the initial data, in order to decode and show it, before the main image request has finished (or even started).
+
 [Online Demo](https://blurhash-wasm.netlify.com).
 
 ## Usage in JS
