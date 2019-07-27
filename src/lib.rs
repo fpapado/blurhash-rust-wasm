@@ -20,6 +20,10 @@ pub enum Error {
     LengthMismatch,
 }
 
+pub enum EncodingError {
+    MaxComponents,
+}
+
 /* Decode for WASM target
  * It is similar to `decode`, but uses an option for the Error
  * I could not figure out a good way to use the Error in the regular decode,
@@ -119,6 +123,16 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
     }
 
     Ok(pixels)
+}
+
+pub fn encode(
+    pixels: Vec<u8>,
+    cx: u32,
+    cy: u32,
+    width: u32,
+    hieght: u32,
+) -> Result<String, EncodingError> {
+    unimplemented!();
 }
 
 fn decode_dc(value: usize) -> [f64; 3] {
