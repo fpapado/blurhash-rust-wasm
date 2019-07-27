@@ -11,9 +11,9 @@
 # “publish” is the directory to publish (relative to the root of your repo).
 
 [build]
-  base    = "dist"
-  command = "npm run build"
+  base    = "demo"
   publish = "demo/dist"
+  command = "npm run build"
 
 # Redirects
 # Anything else, we redirect to index.html
