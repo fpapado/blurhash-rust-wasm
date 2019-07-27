@@ -3,6 +3,30 @@
   <head>
     <meta charset="utf-8">
     <title>Rust Wasm Blurhash</title>
+    <style>
+      :root {
+        --blue: #1261C9;
+        --indigo: #1e12c9;
+        --indigo-darker: #1a10b4;
+      }
+      *:focus {
+        outline: 3px solid transparent;
+        box-shadow: 0 0 0 3px var(--indigo);
+      }
+      .z-n1 {
+        z-index: -1;
+      }
+      a:link, a:visited {
+        transition: color 0.12s ease;
+        color: var(--blue);
+      }
+      a:hover, a:focus {
+        color: var(--indigo);
+      }
+      a:active {
+        color: var(--indigo-darker);
+      }
+    </style>
   </head>
   <body class="f4 lh-copy sans-serif">
     <div id="root"></div>
