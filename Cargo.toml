@@ -36,4 +36,7 @@ image = "0.22.0"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
-opt-level = "s"
+# When measuring, this didn't really change size much (it actually increased!).
+# For that reason, we've left it out for now.
+# opt-level = 's'
+lto = true

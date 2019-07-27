@@ -29,7 +29,9 @@ pub enum Error {
 pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
     match decode(blur_hash, width, height) {
         Ok(img) => Ok(img),
-        Err(_err) => Err(JsValue::from_str("The length of the supplied string is invalid.")),
+        Err(_err) => Err(JsValue::from_str(
+            "The length of the supplied string is invalid.",
+        )),
     }
 }
 
