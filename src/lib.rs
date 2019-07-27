@@ -1,7 +1,6 @@
 mod utils;
 
 use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::f64::consts::PI;
 use wasm_bindgen::prelude::*;
@@ -187,6 +186,8 @@ fn srgb_to_linear(value: usize) -> f64 {
 
 // Encode
 
+// TODO: Think about argument order here...
+// What is more common in Rust? Data or config first?
 pub fn encode(
     pixels: Vec<u8>,
     cx: usize,
