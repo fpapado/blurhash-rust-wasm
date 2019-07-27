@@ -234,25 +234,25 @@ pub fn encode(
 
     let mut hash = String::from("");
 
-    let sizeFlag = ((cx - 1) + (cy - 1) * 9) as usize;
-    hash += &encode_base83_string(sizeFlag, 1);
+    let size_flag = ((cx - 1) + (cy - 1) * 9) as usize;
+    hash += &encode_base83_string(size_flag, 1);
 
     let maximum_value: f64;
 
     if ac.len() > 0 {
         // I'm sure there's a better way to write this; following the Swift atm :)
-        let actualMaximumValue = ac
+        let actual_maximum_value = ac
             .clone()
             .into_iter()
             .map(|[a, b, c]| f64::max(f64::max(f64::abs(a), f64::abs(b)), f64::abs(c)))
             .max_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
             .unwrap();
-        let quantisedMaximumValue = usize::max(
+        let quantised_maximum_value = usize::max(
             0,
-            usize::min(82, f64::floor(actualMaximumValue * 166f64 - 0.5) as usize),
+            usize::min(82, f64::floor(actual_maximum_value * 166f64 - 0.5) as usize),
         );
-        maximum_value = ((quantisedMaximumValue + 1) as f64) / 166f64;
-        hash += &encode_base83_string(quantisedMaximumValue, 1);
+        maximum_value = ((quantised_maximum_value + 1) as f64) / 166f64;
+        hash += &encode_base83_string(quantised_maximum_value, 1);
     } else {
         maximum_value = 1f64;
         hash += &encode_base83_string(0, 1);
@@ -271,10 +271,10 @@ fn multiply_basis_function<F>(
     pixels: &Vec<u8>,
     width: usize,
     height: usize,
-    bytesPerRow: usize,
-    bytesPerPixel: usize,
-    pixelOffset: usize,
-    basisFunction: F,
+    bytes_per_row: usize,
+    bytes_per_pixel: usize,
+    pixel_offset: usize,
+    basis_function: F,
 ) -> [f64; 3]
 where
     F: Fn(f64, f64) -> f64,
@@ -285,21 +285,27 @@ where
 
     for x in 0..width {
         for y in 0..height {
-            let basis = basisFunction(x as f64, y as f64);
+            let basis = basis_function(x as f64, y as f64);
             r += basis
                 * srgb_to_linear(
-                    usize::try_from(pixels[bytesPerPixel * x + pixelOffset + 0 + y * bytesPerRow])
-                        .unwrap(),
+                    usize::try_from(
+                        pixels[bytes_per_pixel * x + pixel_offset + 0 + y * bytes_per_row],
+                    )
+                    .unwrap(),
                 );
             g += basis
                 * srgb_to_linear(
-                    usize::try_from(pixels[bytesPerPixel * x + pixelOffset + 1 + y * bytesPerRow])
-                        .unwrap(),
+                    usize::try_from(
+                        pixels[bytes_per_pixel * x + pixel_offset + 1 + y * bytes_per_row],
+                    )
+                    .unwrap(),
                 );
             b += basis
                 * srgb_to_linear(
-                    usize::try_from(pixels[bytesPerPixel * x + pixelOffset + 2 + y * bytesPerRow])
-                        .unwrap(),
+                    usize::try_from(
+                        pixels[bytes_per_pixel * x + pixel_offset + 2 + y * bytes_per_row],
+                    )
+                    .unwrap(),
                 );
         }
     }
@@ -310,36 +316,36 @@ where
 }
 
 fn encode_dc(value: [f64; 3]) -> usize {
-    let roundedR = linear_to_srgb(value[0]);
-    let roundedG = linear_to_srgb(value[1]);
-    let roundedB = linear_to_srgb(value[2]);
-    ((roundedR << 16) + (roundedG << 8) + roundedB) as usize
+    let rounded_r = linear_to_srgb(value[0]);
+    let rounded_g = linear_to_srgb(value[1]);
+    let rounded_b = linear_to_srgb(value[2]);
+    ((rounded_r << 16) + (rounded_g << 8) + rounded_b) as usize
 }
 
-fn encode_ac(value: [f64; 3], maximumValue: f64) -> usize {
-    let quantR = usize::max(
+fn encode_ac(value: [f64; 3], maximum_value: f64) -> usize {
+    let quant_r = usize::max(
         0,
         usize::min(
             18,
-            f64::floor(sign_pow(value[0] / maximumValue, 0.5) * 9f64 + 9.5) as usize,
+            f64::floor(sign_pow(value[0] / maximum_value, 0.5) * 9f64 + 9.5) as usize,
         ),
     );
-    let quantG = usize::max(
+    let quant_g = usize::max(
         0,
         usize::min(
             18,
-            f64::floor(sign_pow(value[1] / maximumValue, 0.5) * 9f64 + 9.5) as usize,
+            f64::floor(sign_pow(value[1] / maximum_value, 0.5) * 9f64 + 9.5) as usize,
         ),
     );
-    let quantB = usize::max(
+    let quant_b = usize::max(
         0,
         usize::min(
             18,
-            f64::floor(sign_pow(value[2] / maximumValue, 0.5) * 9f64 + 9.5) as usize,
+            f64::floor(sign_pow(value[2] / maximum_value, 0.5) * 9f64 + 9.5) as usize,
         ),
     );
 
-    (quantR * 19 * 19 + quantG * 19 + quantB) as usize
+    (quant_r * 19 * 19 + quant_g * 19 + quant_b) as usize
 }
 
 // Base83
