@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en-US" dir="ltr">
   <head>
     <meta charset="utf-8">
     <title>Rust Wasm Blurhash</title>
@@ -13,8 +13,18 @@
         outline: 3px solid transparent;
         box-shadow: 0 0 0 3px var(--indigo);
       }
-      .z-n1 {
-        z-index: -1;
+      body {
+        hyphens: auto;
+        -webkit-hyphens: auto;
+        -moz-hyphens: auto;
+        -ms-hyphens: auto;
+      }
+      h2 {
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+      p, li, h1, h2 {
+        max-width: 36em;
       }
       a:link, a:visited {
         transition: color 0.12s ease;
@@ -26,9 +36,31 @@
       a:active {
         color: var(--indigo-darker);
       }
+      canvas {
+        display: block;
+      }
+      img {
+        display: block;
+        max-width: 100%;
+      }
+      .z-n1 {
+        z-index: -1;
+      }
+      .transition-opacity {
+        transition: opacity 1s ease-in-out;
+      }
+      .vs2 > * + * {
+        margin-top: 0.5rem;
+      }
+      .vs3 > * + * {
+        margin-top: 1rem;
+      }
+      .vs4 > * + * {
+        margin-top: 2rem;
+      }
     </style>
   </head>
-  <body class="f4 lh-copy sans-serif">
+  <body class="f4 lh-copy sans-serif bg-near-white near-black">
     <div id="root"></div>
     <script src="./bootstrap.js"></script>
   </body>
