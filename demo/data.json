@@ -1,0 +1,34 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "src": "/images/1.jpg",
+      "alt": "A mountain range in blue and pale purple colours.",
+      "blurhash": "LUDT3yayV?ay%jWBa#a}9Xj[j@fP",
+      "ratio": "4x6",
+      "credit": { "username": "eth_gaar", "displayName": "Edgar Hernández" }
+    },
+    {
+      "id": 2,
+      "src": "/images/2.jpg",
+      "alt": "A panoramic view of white and blue roofs on a Greek island.",
+      "blurhash": "L3JkcZ^+00~V00009G0000R:%$4T",
+      "ratio": "4x6",
+      "credit": {
+        "username": "hellothisisbenjamin",
+        "displayName": "Benjamin Behre"
+      }
+    },
+    {
+      "id": 3,
+      "src": "/images/3.jpg",
+      "alt": "A row of coloured buildings, on a curved stret.",
+      "blurhash": "LFF$O@O,znM*~XNZ#+t8IUV@S5xu",
+      "ratio": "6x4",
+      "credit": {
+        "username": "jonathanricci",
+        "displayName": "Jonathan Ricci"
+      }
+    }
+  ]
+}

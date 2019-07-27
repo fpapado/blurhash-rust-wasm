@@ -1,17 +1,14 @@
-import * as blurhash from "blurhash-wasm";
+import "tachyons"
+import { App } from "./App";
+import { render, h } from "preact";
+
+// You can imagine a similar data structure coming from your backend.
+// Note how the blurhash is included in the fields!
+import data from "./data.json";
 
 function main() {
-  // Returned as Uint8Array | undefined
-  const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 32, 32);
-
-  if (pixels) {
-    const asClamped = new Uint8ClampedArray(pixels);
-    const imageData = new ImageData(asClamped, 32, 32);
-
-    const canvasEl = document.getElementById("image-canvas");
-    const ctx = canvasEl.getContext("2d");
-    ctx.putImageData(imageData, 0, 0);
-  }
+  const root = document.getElementById("root");
+  render(<App images={data.images} />, root);
 }
 
 main();
