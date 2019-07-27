@@ -6,21 +6,49 @@ It is compiled to WebAssembly (WASM), and [available on npm as `blurhash-wasm`](
 
 ## Usage in JS
 
+### Installation
+
+You will need a package manager, either npm ([comes with node](https://nodejs.org/en/download/)) or [yarn](https://yarnpkg.com/lang/en/docs/install/).
+
+You will also need a bundler, [webpack](https://webpack.js.org/) or [Rollup](https://rollupjs.org/guide/en/), configured for your project.
+
+Then, in a terminal:
+
+```shell
+npm install blurhash-wasm
+# Or, yarn add blurhash-wasm
+```
+
+The [demo app source](/demo) has a complete example of using `blurhash-wasm`.
+
+### decode
+
 ```js
-import * as blurhash from "blurhash";
+import * as blurhash from "blurhash-wasm";
 
 // Returned as Uint8Array
 // You can use this to construct canvas-compatible resources
 const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
 ```
 
-## encode
+### encode
 
 Not yet implemented :)
 
 ## Usage in Rust
 
-## decode
+### Installation
+
+You will need [Rust and Cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html).
+
+Add the version you want to `Cargo.toml`:
+
+```
+[dependencies]
+blurhash-wasm = "0.1.0"
+```
+
+### decode
 
 ```rust
 use blurhash_wasm;
@@ -29,7 +57,7 @@ use blurhash_wasm;
 let res = blurhash::decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
 ```
 
-## encode
+### encode
 
 Not yet implemented :)
 
