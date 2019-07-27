@@ -1,7 +1,7 @@
-#![allow(exceeding_bitshifts)]
 mod utils;
 
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::f64::consts::PI;
 use wasm_bindgen::prelude::*;
@@ -357,15 +357,21 @@ fn encode_ac(value: [f64; 3], maximum_value: f64) -> usize {
 
 // Base83
 
-// TODO: Consider using lazy_static to expand this, or even write long-hand
-const ENCODE_CHARACTERS: &str =
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#$%*+,-.:;=?@[]^_{|}~";
+// I considered using lazy_static! for this, but other implementations
+// seem to hard-code these as well. Doing that for consistency.
+static ENCODE_CHARACTERS: [char; 83] = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
+    'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b',
+    'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
+    'v', 'w', 'x', 'y', 'z', '#', '$', '%', '*', '+', ',', '-', '.', ':', ';', '=', '?', '@', '[',
+    ']', '^', '_', '{', '|', '}', '~',
+];
 
 fn decode_base83_string(string: &str) -> usize {
     let mut value: usize = 0;
 
     for character in string.chars() {
-        match ENCODE_CHARACTERS.find(character) {
+        match ENCODE_CHARACTERS.iter().position(|&c| c == character) {
             Some(digit) => value = value * 83 + digit,
 
             None => (),
@@ -378,7 +384,7 @@ fn encode_base83_string(value: usize, length: u32) -> String {
     let mut result = String::new();
     for i in 1..=length {
         let digit = (value / usize::pow(83, length - i)) % 83;
-        result += &ENCODE_CHARACTERS.chars().nth(digit).unwrap().to_string();
+        result += &ENCODE_CHARACTERS[digit].to_string();
     }
     result
 }
