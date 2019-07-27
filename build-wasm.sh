@@ -13,9 +13,9 @@ wc -c pkg/blurhash_wasm_bg.wasm
 # Optimize for size
 # You might need to install wasm-opt from binaryen
 # https://github.com/WebAssembly/binaryen/releases
-wasm-opt -Os -o pkg/blurhash_wasm_bg.wasm pkg/blurhash_wasm_bg.wasm
+wasm-opt -O3 -o pkg/blurhash_wasm_bg.wasm pkg/blurhash_wasm_bg.wasm
 
-# echo "Size after wasm-opt"
+echo "Size after wasm-opt"
 wc -c pkg/blurhash_wasm_bg.wasm
 
 echo "Size after gzip"
