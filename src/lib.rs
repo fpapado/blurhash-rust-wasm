@@ -12,6 +12,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 // TODO: Use failure
 // TODO: Use format for the error in wasm_decode
 // TODO: Add adjustable 'punch'
+// TODO: Avoid panicing infrasturcture (checked division, .get, no unwrap)
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
