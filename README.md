@@ -1,8 +1,8 @@
-# blurhash-rust-wasm
+# blurhash-wasm
 
 A Rust implementation of the [blurhash algorithm](https://github.com/woltapp/blurhash).
 
-It is compiled to WebAssembly (WASM), and [available on npm as `blurhash-wasm`](https://npmjs.com/blurhast-wasm).
+It is compiled to WebAssembly (WASM), and [available on npm as `blurhash-wasm`](https://npmjs.com/blurhash-wasm).
 
 ## Usage in JS
 
