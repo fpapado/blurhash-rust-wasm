@@ -25,6 +25,7 @@ pub enum Error {
 
 pub enum EncodingError {
     ComponentsNumberInvalid,
+    BytesPerPixelMismatch,
 }
 
 // Decode
@@ -193,6 +194,10 @@ pub fn encode(
     width: usize,
     height: usize,
 ) -> Result<String, EncodingError> {
+    // Should we assume RGBA for round-trips? Or does it not matter?
+    let bytes_per_row = width * 4;
+    let bytes_per_pixel = 4;
+
     // NOTE: We could clamp instead of Err.
     // The TS version does that. Not sure which one is better.
     // We also could (should?) be checking for the color space
@@ -200,9 +205,9 @@ pub fn encode(
         return Err(EncodingError::ComponentsNumberInvalid);
     }
 
-    // Should we assume RGBA for round-trips? Or does it not matter?
-    let bytes_per_row = width * 4;
-    let bytes_per_pixel = 4;
+    if width * height * 4 != pixels.len() {
+        return Err(EncodingError::BytesPerPixelMismatch);
+    }
 
     let mut dc: [f64; 3] = [0., 0., 0.];
     let mut ac: Vec<[f64; 3]> = Vec::new();
@@ -219,20 +224,22 @@ pub fn encode(
                 0,
                 |a, b| {
                     (normalisation
-                        * f64::cos(PI * x as f64 * a / width as f64)
-                        * f64::cos(PI * y as f64 * b / height as f64))
+                        * f64::cos((PI * x as f64 * a) / width as f64)
+                        * f64::cos((PI * y as f64 * b) / height as f64))
                 },
             );
 
             if x == 0 && y == 0 {
+                // The first iteration is the dc
                 dc = factor;
             } else {
+                // All others are the ac
                 ac.push(factor);
             }
         }
     }
 
-    let mut hash = String::from("");
+    let mut hash = String::new();
 
     let size_flag = ((cx - 1) + (cy - 1) * 9) as usize;
     hash += &encode_base83_string(size_flag, 1);
@@ -310,7 +317,7 @@ where
         }
     }
 
-    let scale = 1f64 / (width * height) as f64;
+    let scale = 1f64 / ((width * height) as f64);
 
     [r * scale, g * scale, b * scale]
 }
@@ -323,29 +330,29 @@ fn encode_dc(value: [f64; 3]) -> usize {
 }
 
 fn encode_ac(value: [f64; 3], maximum_value: f64) -> usize {
-    let quant_r = usize::max(
-        0,
-        usize::min(
-            18,
-            f64::floor(sign_pow(value[0] / maximum_value, 0.5) * 9f64 + 9.5) as usize,
+    let quant_r = f64::floor(f64::max(
+        0f64,
+        f64::min(
+            18f64,
+            f64::floor(sign_pow(value[0] / maximum_value, 0.5) * 9f64 + 9.5),
         ),
-    );
-    let quant_g = usize::max(
-        0,
-        usize::min(
-            18,
-            f64::floor(sign_pow(value[1] / maximum_value, 0.5) * 9f64 + 9.5) as usize,
+    ));
+    let quant_g = f64::floor(f64::max(
+        0f64,
+        f64::min(
+            18f64,
+            f64::floor(sign_pow(value[1] / maximum_value, 0.5) * 9f64 + 9.5),
         ),
-    );
-    let quant_b = usize::max(
-        0,
-        usize::min(
-            18,
-            f64::floor(sign_pow(value[2] / maximum_value, 0.5) * 9f64 + 9.5) as usize,
+    ));
+    let quant_b = f64::floor(f64::max(
+        0f64,
+        f64::min(
+            18f64,
+            f64::floor(sign_pow(value[2] / maximum_value, 0.5) * 9f64 + 9.5),
         ),
-    );
+    ));
 
-    (quant_r * 19 * 19 + quant_g * 19 + quant_b) as usize
+    (quant_r * 19f64 * 19f64 + quant_g * 19f64 + quant_b) as usize
 }
 
 // Base83
@@ -368,8 +375,8 @@ fn decode_base83_string(string: &str) -> usize {
 }
 
 fn encode_base83_string(value: usize, length: u32) -> String {
-    let mut result = String::from("");
-    for i in 1..length + 1 {
+    let mut result = String::new();
+    for i in 1..=length {
         let digit = (value / usize::pow(83, length - i)) % 83;
         result += &ENCODE_CHARACTERS.chars().nth(digit).unwrap().to_string();
     }
