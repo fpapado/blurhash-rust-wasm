@@ -36,6 +36,7 @@ function CustomImage(props) {
   const canvasRef = useRef(null);
 
   // Cycle the opacity of the final image, for demo purposes
+  // (You could also do this with CSS animation keyframes :) )
   const [opacity, setOpacity] = useState(-1);
 
   useInterval(() => {
