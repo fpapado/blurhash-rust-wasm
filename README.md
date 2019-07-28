@@ -37,7 +37,7 @@ const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
 
 ### encode
 
-Not yet implemented :)
+Implented, aim to be published in 0.3.0
 
 ## Usage in Rust
 
@@ -63,7 +63,7 @@ let res = blurhash::decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
 
 ### encode
 
-Not yet implemented :)
+Implented, aim to be published in 0.3.0
 
 ## About the setup
 
