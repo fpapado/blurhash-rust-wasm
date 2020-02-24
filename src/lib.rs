@@ -4,6 +4,7 @@ use std::cmp::Ordering;
 use std::convert::TryFrom;
 use std::f64::consts::PI;
 use wasm_bindgen::prelude::*;
+use thiserror::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -11,43 +12,32 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-// TODO: Use failure
-// TODO: Use format for the error in wasm_decode
 // TODO: Add adjustable 'punch'
 // TODO: Avoid panicing infrasturcture (checked division, .get, no unwrap)
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
 pub enum Error {
+    #[error("the length of the hash is invalid")]
     LengthInvalid,
+    #[error("the specified number of components does not match the actual length")]
     LengthMismatch,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
 pub enum EncodingError {
+    #[error("cannot encode this number of components")]
     ComponentsNumberInvalid,
+    #[error("the bytes per pixel does not match the pixel count")]
     BytesPerPixelMismatch,
 }
 
 // Decode
 
-/* Decode for WASM target
- * It is similar to `decode`, but uses an option for the Error
- * I could not figure out a good way to use the Error in the regular decode,
- * and was getting a E0277 or not being able to convert automatically.
-
- * There are two current options, afaict:
- *  1) Result E be a JsValue with hardcoded (or formatted) strings.
- *  2) Transform the Result to Option, which on failure would be undefined in JS.
-
- * For convenience, I went with 2), until we can return Error.
- * This seems to be an open topic atm, so a separate decode seems ok for now :)
- * @see https://github.com/rustwasm/wasm-bindgen/issues/1017
-*/
+/// Decode for WASM target. If an error occurs, the function will throw a `JsError`.
 #[wasm_bindgen(js_name = "decode")]
-pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Option<Vec<u8>> {
-    match decode(blur_hash, width, height) {
-        Ok(img) => Some(img),
-        Err(_err) => None,
-    }
+pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
+    decode(blur_hash, width, height)
+        .map_err(|err| js_sys::Error::new(&err.to_string()).into())
 }
 
 pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, Error> {
