@@ -47,9 +47,8 @@ function CustomImage(props) {
   useEffect(
     () => {
       // Decode the hash into pixels
-      // Returned as Uint8Array | undefined
-      const pixels = blurhash.decode(hash, WIDTH, HEIGHT);
-      if (pixels) {
+      try {
+        const pixels = blurhash.decode(hash, WIDTH, HEIGHT);
         // Set the pixels to the canvas
         const asClamped = new Uint8ClampedArray(pixels);
         const imageData = new ImageData(asClamped, WIDTH, HEIGHT);
@@ -60,6 +59,8 @@ function CustomImage(props) {
           const ctx = canvasEl.getContext('2d');
           ctx.putImageData(imageData, 0, 0);
         }
+      } catch (error) {
+        console.error(error);
       }
     },
     [hash]
@@ -128,10 +129,12 @@ function Pitch() {
         <code>
           {`import * as blurhash from "blurhash-wasm";
 
-// Returned as Uint8Array | undefined
 // You can use this to construct canvas-compatible resources
-const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
-`}
+try {
+  const pixels = blurhash.decode("LKO2?U%2Tw=w]~RBVZRi};RPxuwH", 40, 30);
+} catch (error) {
+  console.log(error);
+}`}
         </code>
       </pre>
       <div className="vs3">

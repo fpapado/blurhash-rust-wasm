@@ -3,6 +3,7 @@ mod utils;
 use std::cmp::Ordering;
 use std::convert::TryFrom;
 use std::f64::consts::PI;
+use thiserror::*;
 use wasm_bindgen::prelude::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -11,43 +12,31 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-// TODO: Use failure
-// TODO: Use format for the error in wasm_decode
 // TODO: Add adjustable 'punch'
 // TODO: Avoid panicing infrasturcture (checked division, .get, no unwrap)
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
 pub enum Error {
+    #[error("the length of the hash is invalid")]
     LengthInvalid,
+    #[error("the specified number of components does not match the actual length")]
     LengthMismatch,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
 pub enum EncodingError {
+    #[error("cannot encode this number of components")]
     ComponentsNumberInvalid,
+    #[error("the bytes per pixel does not match the pixel count")]
     BytesPerPixelMismatch,
 }
 
 // Decode
 
-/* Decode for WASM target
- * It is similar to `decode`, but uses an option for the Error
- * I could not figure out a good way to use the Error in the regular decode,
- * and was getting a E0277 or not being able to convert automatically.
-
- * There are two current options, afaict:
- *  1) Result E be a JsValue with hardcoded (or formatted) strings.
- *  2) Transform the Result to Option, which on failure would be undefined in JS.
-
- * For convenience, I went with 2), until we can return Error.
- * This seems to be an open topic atm, so a separate decode seems ok for now :)
- * @see https://github.com/rustwasm/wasm-bindgen/issues/1017
-*/
+/// Decode for WASM target. If an error occurs, the function will throw a `JsError`.
 #[wasm_bindgen(js_name = "decode")]
-pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Option<Vec<u8>> {
-    match decode(blur_hash, width, height) {
-        Ok(img) => Some(img),
-        Err(_err) => None,
-    }
+pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
+    decode(blur_hash, width, height).map_err(|err| js_sys::Error::new(&err.to_string()).into())
 }
 
 pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, Error> {
@@ -120,7 +109,7 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
             let int_g = linear_to_srgb(g);
             let int_b = linear_to_srgb(b);
 
-            pixels[4 * x + 0 + y * bytes_per_row] = int_r as u8;
+            pixels[4 * x + y * bytes_per_row] = int_r as u8;
             pixels[4 * x + 1 + y * bytes_per_row] = int_g as u8;
             pixels[4 * x + 2 + y * bytes_per_row] = int_b as u8;
             pixels[4 * x + 3 + y * bytes_per_row] = 255 as u8;
@@ -145,13 +134,11 @@ fn decode_ac(value: usize, maximum_value: f64) -> [f64; 3] {
     let quant_r = f64::floor((value / (19 * 19)) as f64);
     let quant_g = f64::floor(((value / 19) as f64) % 19f64);
     let quant_b = (value as f64) % 19f64;
-
-    let rgb = [
+    [
         sign_pow((quant_r - 9f64) / 9f64, 2f64) * maximum_value,
         sign_pow((quant_g - 9f64) / 9f64, 2f64) * maximum_value,
         sign_pow((quant_b - 9f64) / 9f64, 2f64) * maximum_value,
-    ];
-    rgb
+    ]
 }
 
 fn sign_pow(value: f64, exp: f64) -> f64 {
@@ -168,19 +155,19 @@ fn get_sign(n: f64) -> f64 {
 
 fn linear_to_srgb(value: f64) -> usize {
     let v = f64::max(0f64, f64::min(1f64, value));
-    if v <= 0.0031308 {
-        return (v * 12.92 * 255f64 + 0.5) as usize;
+    if v <= 0.003_130_8 {
+        (v * 12.92 * 255f64 + 0.5) as usize
     } else {
-        return ((1.055 * f64::powf(v, 1f64 / 2.4) - 0.055) * 255f64 + 0.5) as usize;
+        ((1.055 * f64::powf(v, 1f64 / 2.4) - 0.055) * 255f64 + 0.5) as usize
     }
 }
 
 fn srgb_to_linear(value: usize) -> f64 {
     let v = (value as f64) / 255f64;
     if v <= 0.04045 {
-        return v / 12.92;
+        v / 12.92
     } else {
-        return ((v + 0.055) / 1.055).powf(2.4);
+        ((v + 0.055) / 1.055).powf(2.4)
     }
 }
 
@@ -247,7 +234,7 @@ pub fn encode(
 
     let maximum_value: f64;
 
-    if ac.len() > 0 {
+    if !ac.is_empty() {
         // I'm sure there's a better way to write this; following the Swift atm :)
         let actual_maximum_value = ac
             .clone()
@@ -276,7 +263,7 @@ pub fn encode(
 }
 
 fn multiply_basis_function<F>(
-    pixels: &Vec<u8>,
+    pixels: &[u8],
     width: usize,
     height: usize,
     bytes_per_row: usize,
@@ -296,10 +283,8 @@ where
             let basis = basis_function(x as f64, y as f64);
             r += basis
                 * srgb_to_linear(
-                    usize::try_from(
-                        pixels[bytes_per_pixel * x + pixel_offset + 0 + y * bytes_per_row],
-                    )
-                    .unwrap(),
+                    usize::try_from(pixels[bytes_per_pixel * x + pixel_offset + y * bytes_per_row])
+                        .unwrap(),
                 );
             g += basis
                 * srgb_to_linear(
@@ -372,10 +357,8 @@ fn decode_base83_string(string: &str) -> usize {
     let mut value: usize = 0;
 
     for character in string.chars() {
-        match ENCODE_CHARACTERS.iter().position(|&c| c == character) {
-            Some(digit) => value = value * 83 + digit,
-
-            None => (),
+        if let Some(digit) = ENCODE_CHARACTERS.iter().position(|&c| c == character) {
+            value = value * 83 + digit
         }
     }
     value
