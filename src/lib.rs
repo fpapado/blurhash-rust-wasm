@@ -66,7 +66,7 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
     let quantised_maximum_value = decode_base83_string(blur_hash.get(1..2).unwrap());
     let maximum_value = ((quantised_maximum_value + 1) as f64) / 166f64;
 
-    let mut colours: Vec<[f64; 3]> = Vec::new();
+    let mut colours: Vec<[f64; 3]> = Vec::with_capacity(num_x * num_y);
 
     for i in 0..(num_x * num_y) {
         if i == 0 {
@@ -142,15 +142,7 @@ fn decode_ac(value: usize, maximum_value: f64) -> [f64; 3] {
 }
 
 fn sign_pow(value: f64, exp: f64) -> f64 {
-    get_sign(value) * f64::powf(f64::abs(value), exp)
-}
-
-fn get_sign(n: f64) -> f64 {
-    if n < 0f64 {
-        -1f64
-    } else {
-        1f64
-    }
+    value.abs().powf(exp).copysign(value)
 }
 
 fn linear_to_srgb(value: f64) -> usize {
@@ -198,7 +190,7 @@ pub fn encode(
     }
 
     let mut dc: [f64; 3] = [0., 0., 0.];
-    let mut ac: Vec<[f64; 3]> = Vec::new();
+    let mut ac: Vec<[f64; 3]> = Vec::with_capacity(cy * cx - 1);
 
     for y in 0..cy {
         for x in 0..cx {
@@ -354,23 +346,17 @@ static ENCODE_CHARACTERS: [char; 83] = [
 ];
 
 fn decode_base83_string(string: &str) -> usize {
-    let mut value: usize = 0;
-
-    for character in string.chars() {
-        if let Some(digit) = ENCODE_CHARACTERS.iter().position(|&c| c == character) {
-            value = value * 83 + digit
-        }
-    }
-    value
+    string
+        .chars()
+        .filter_map(|character| ENCODE_CHARACTERS.iter().position(|&c| c == character))
+        .fold(0, |value, digit| value * 83 + digit)
 }
 
 fn encode_base83_string(value: usize, length: u32) -> String {
-    let mut result = String::new();
-    for i in 1..=length {
-        let digit = (value / usize::pow(83, length - i)) % 83;
-        result += &ENCODE_CHARACTERS[digit].to_string();
-    }
-    result
+    (1..=length)
+        .map(|i| (value / usize::pow(83, length - i)) % 83)
+        .map(|digit| ENCODE_CHARACTERS[digit])
+        .collect()
 }
 
 #[cfg(test)]
