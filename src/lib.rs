@@ -307,30 +307,15 @@ fn encode_dc(value: [f64; 3]) -> usize {
     ((rounded_r << 16) + (rounded_g << 8) + rounded_b) as usize
 }
 
-fn encode_ac(value: [f64; 3], maximum_value: f64) -> usize {
-    let quant_r = f64::floor(f64::max(
-        0f64,
-        f64::min(
-            18f64,
-            f64::floor(sign_pow(value[0] / maximum_value, 0.5) * 9f64 + 9.5),
-        ),
-    ));
-    let quant_g = f64::floor(f64::max(
-        0f64,
-        f64::min(
-            18f64,
-            f64::floor(sign_pow(value[1] / maximum_value, 0.5) * 9f64 + 9.5),
-        ),
-    ));
-    let quant_b = f64::floor(f64::max(
-        0f64,
-        f64::min(
-            18f64,
-            f64::floor(sign_pow(value[2] / maximum_value, 0.5) * 9f64 + 9.5),
-        ),
-    ));
+fn encode_ac([r, g, b]: [f64; 3], maximum_value: f64) -> usize {
+    let quant = |v| {
+        (sign_pow(v / maximum_value, 0.5) * 9. + 9.5)
+            .floor()
+            .min(18.)
+            .max(0.)
+    };
 
-    (quant_r * 19f64 * 19f64 + quant_g * 19f64 + quant_b) as usize
+    (quant(r) * 19f64 * 19f64 + quant(g) * 19f64 + quant(b)) as usize
 }
 
 // Base83
