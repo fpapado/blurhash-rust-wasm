@@ -228,11 +228,11 @@ pub fn encode(
 
     if !ac.is_empty() {
         // I'm sure there's a better way to write this; following the Swift atm :)
+        let maxf = |a: &f64, b: &f64|  a.partial_cmp(b).unwrap_or(Ordering::Equal);
         let actual_maximum_value = ac
-            .clone()
-            .into_iter()
-            .map(|[a, b, c]| f64::max(f64::max(f64::abs(a), f64::abs(b)), f64::abs(c)))
-            .max_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
+            .iter()
+            .map(|channels| channels.iter().copied().map(f64::abs).max_by(maxf).unwrap())
+            .max_by(maxf)
             .unwrap();
         let quantised_maximum_value = usize::max(
             0,
