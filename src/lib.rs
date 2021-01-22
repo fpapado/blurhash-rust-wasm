@@ -300,11 +300,9 @@ where
     [r * scale, g * scale, b * scale]
 }
 
-fn encode_dc(value: [f64; 3]) -> usize {
-    let rounded_r = linear_to_srgb(value[0]);
-    let rounded_g = linear_to_srgb(value[1]);
-    let rounded_b = linear_to_srgb(value[2]);
-    ((rounded_r << 16) + (rounded_g << 8) + rounded_b) as usize
+fn encode_dc([r, g, b]: [f64; 3]) -> usize {
+    let rounded = |v| linear_to_srgb(v);
+    ((rounded(r) << 16) + (rounded(g) << 8) + rounded(b)) as usize
 }
 
 fn encode_ac([r, g, b]: [f64; 3], maximum_value: f64) -> usize {
