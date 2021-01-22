@@ -337,7 +337,7 @@ fn decode_base83_string(string: &str) -> usize {
 
 fn encode_base83_string(value: usize, length: u32) -> impl Iterator<Item=char> {
     (1..=length)
-        .map(move |i| (value / usize::pow(83, length - i)) % 83)
+        .map(move |i| (value / 83usize.pow(length - i)) % 83)
         .map(|digit| ENCODE_CHARACTERS[digit])
 }
 
