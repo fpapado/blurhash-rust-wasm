@@ -203,9 +203,9 @@ pub fn encode(
                 bytes_per_pixel,
                 0,
                 |a, b| {
-                    (normalisation
+                    normalisation
                         * f64::cos((PI * x as f64 * a) / width as f64)
-                        * f64::cos((PI * y as f64 * b) / height as f64))
+                        * f64::cos((PI * y as f64 * b) / height as f64)
                 },
             );
 
@@ -219,36 +219,36 @@ pub fn encode(
         }
     }
 
-    let mut hash = String::new();
+    let mut hash = String::with_capacity(1 + 1 + 4 + 2 * ac.len());
 
     let size_flag = ((cx - 1) + (cy - 1) * 9) as usize;
-    hash += &encode_base83_string(size_flag, 1);
+    hash.extend(encode_base83_string(size_flag, 1));
 
     let maximum_value: f64;
 
     if !ac.is_empty() {
         // I'm sure there's a better way to write this; following the Swift atm :)
+        let maxf = |a: &f64, b: &f64|  a.partial_cmp(b).unwrap_or(Ordering::Equal);
         let actual_maximum_value = ac
-            .clone()
-            .into_iter()
-            .map(|[a, b, c]| f64::max(f64::max(f64::abs(a), f64::abs(b)), f64::abs(c)))
-            .max_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal))
+            .iter()
+            .map(|channels| channels.iter().copied().map(f64::abs).max_by(maxf).unwrap())
+            .max_by(maxf)
             .unwrap();
         let quantised_maximum_value = usize::max(
             0,
             usize::min(82, f64::floor(actual_maximum_value * 166f64 - 0.5) as usize),
         );
         maximum_value = ((quantised_maximum_value + 1) as f64) / 166f64;
-        hash += &encode_base83_string(quantised_maximum_value, 1);
+        hash.extend(encode_base83_string(quantised_maximum_value, 1));
     } else {
         maximum_value = 1f64;
-        hash += &encode_base83_string(0, 1);
+        hash.extend(encode_base83_string(0, 1));
     }
 
-    hash += &encode_base83_string(encode_dc(dc), 4);
+    hash.extend(encode_base83_string(encode_dc(dc), 4));
 
     for factor in ac {
-        hash += &encode_base83_string(encode_ac(factor, maximum_value), 2);
+        hash.extend(encode_base83_string(encode_ac(factor, maximum_value), 2));
     }
 
     Ok(hash)
@@ -300,37 +300,20 @@ where
     [r * scale, g * scale, b * scale]
 }
 
-fn encode_dc(value: [f64; 3]) -> usize {
-    let rounded_r = linear_to_srgb(value[0]);
-    let rounded_g = linear_to_srgb(value[1]);
-    let rounded_b = linear_to_srgb(value[2]);
-    ((rounded_r << 16) + (rounded_g << 8) + rounded_b) as usize
+fn encode_dc([r, g, b]: [f64; 3]) -> usize {
+    let rounded = |v| linear_to_srgb(v);
+    ((rounded(r) << 16) + (rounded(g) << 8) + rounded(b)) as usize
 }
 
-fn encode_ac(value: [f64; 3], maximum_value: f64) -> usize {
-    let quant_r = f64::floor(f64::max(
-        0f64,
-        f64::min(
-            18f64,
-            f64::floor(sign_pow(value[0] / maximum_value, 0.5) * 9f64 + 9.5),
-        ),
-    ));
-    let quant_g = f64::floor(f64::max(
-        0f64,
-        f64::min(
-            18f64,
-            f64::floor(sign_pow(value[1] / maximum_value, 0.5) * 9f64 + 9.5),
-        ),
-    ));
-    let quant_b = f64::floor(f64::max(
-        0f64,
-        f64::min(
-            18f64,
-            f64::floor(sign_pow(value[2] / maximum_value, 0.5) * 9f64 + 9.5),
-        ),
-    ));
+fn encode_ac([r, g, b]: [f64; 3], maximum_value: f64) -> usize {
+    let quant = |v| {
+        (sign_pow(v / maximum_value, 0.5) * 9. + 9.5)
+            .floor()
+            .min(18.)
+            .max(0.)
+    };
 
-    (quant_r * 19f64 * 19f64 + quant_g * 19f64 + quant_b) as usize
+    (quant(r) * 19f64 * 19f64 + quant(g) * 19f64 + quant(b)) as usize
 }
 
 // Base83
@@ -352,11 +335,10 @@ fn decode_base83_string(string: &str) -> usize {
         .fold(0, |value, digit| value * 83 + digit)
 }
 
-fn encode_base83_string(value: usize, length: u32) -> String {
+fn encode_base83_string(value: usize, length: u32) -> impl Iterator<Item = char> {
     (1..=length)
-        .map(|i| (value / usize::pow(83, length - i)) % 83)
+        .map(move |i| (value / 83usize.pow(length - i)) % 83)
         .map(|digit| ENCODE_CHARACTERS[digit])
-        .collect()
 }
 
 #[cfg(test)]
