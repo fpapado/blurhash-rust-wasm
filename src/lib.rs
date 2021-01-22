@@ -219,10 +219,10 @@ pub fn encode(
         }
     }
 
-    let mut hash = String::new();
+    let mut hash = String::with_capacity(1 + 1 + 4 + 2 * ac.len());
 
     let size_flag = ((cx - 1) + (cy - 1) * 9) as usize;
-    hash += &encode_base83_string(size_flag, 1);
+    hash.extend(encode_base83_string(size_flag, 1));
 
     let maximum_value: f64;
 
@@ -239,16 +239,16 @@ pub fn encode(
             usize::min(82, f64::floor(actual_maximum_value * 166f64 - 0.5) as usize),
         );
         maximum_value = ((quantised_maximum_value + 1) as f64) / 166f64;
-        hash += &encode_base83_string(quantised_maximum_value, 1);
+        hash.extend(encode_base83_string(quantised_maximum_value, 1));
     } else {
         maximum_value = 1f64;
-        hash += &encode_base83_string(0, 1);
+        hash.extend(encode_base83_string(0, 1));
     }
 
-    hash += &encode_base83_string(encode_dc(dc), 4);
+    hash.extend(encode_base83_string(encode_dc(dc), 4));
 
     for factor in ac {
-        hash += &encode_base83_string(encode_ac(factor, maximum_value), 2);
+        hash.extend(encode_base83_string(encode_ac(factor, maximum_value), 2));
     }
 
     Ok(hash)
@@ -335,11 +335,10 @@ fn decode_base83_string(string: &str) -> usize {
         .fold(0, |value, digit| value * 83 + digit)
 }
 
-fn encode_base83_string(value: usize, length: u32) -> String {
+fn encode_base83_string(value: usize, length: u32) -> impl Iterator<Item=char> {
     (1..=length)
-        .map(|i| (value / usize::pow(83, length - i)) % 83)
+        .map(move |i| (value / usize::pow(83, length - i)) % 83)
         .map(|digit| ENCODE_CHARACTERS[digit])
-        .collect()
 }
 
 #[cfg(test)]
