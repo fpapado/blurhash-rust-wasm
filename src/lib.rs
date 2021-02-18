@@ -203,9 +203,9 @@ pub fn encode(
                 bytes_per_pixel,
                 0,
                 |a, b| {
-                    (normalisation
+                    normalisation
                         * f64::cos((PI * x as f64 * a) / width as f64)
-                        * f64::cos((PI * y as f64 * b) / height as f64))
+                        * f64::cos((PI * y as f64 * b) / height as f64)
                 },
             );
 
