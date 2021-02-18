@@ -12,7 +12,6 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-// TODO: Add adjustable 'punch'
 // TODO: Avoid panicing infrasturcture (checked division, .get, no unwrap)
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
@@ -35,11 +34,11 @@ pub enum EncodingError {
 
 /// Decode for WASM target. If an error occurs, the function will throw a `JsError`.
 #[wasm_bindgen(js_name = "decode")]
-pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
-    decode(blur_hash, width, height).map_err(|err| js_sys::Error::new(&err.to_string()).into())
+pub fn wasm_decode(blur_hash: &str, width: usize, height: usize, punch: Option<f64>) -> Result<Vec<u8>, JsValue> {
+    decode(blur_hash, width, height, punch).map_err(|err| js_sys::Error::new(&err.to_string()).into())
 }
 
-pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, Error> {
+pub fn decode(blur_hash: &str, width: usize, height: usize, punch: Option<f64>) -> Result<Vec<u8>, Error> {
     if blur_hash.len() < 6 {
         return Err(Error::LengthInvalid);
     }
@@ -65,6 +64,7 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
     // It represents a floating-point value of (max + 1) / 166.
     let quantised_maximum_value = decode_base83_string(blur_hash.get(1..2).unwrap());
     let maximum_value = ((quantised_maximum_value + 1) as f64) / 166f64;
+    let punch_value = punch.unwrap_or(1.0);
 
     let mut colours: Vec<[f64; 3]> = Vec::with_capacity(num_x * num_y);
 
@@ -76,7 +76,7 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
         } else {
             // 4. AC components, 2 digits each, nx * ny - 1 components in total.
             let value = decode_base83_string(blur_hash.get((4 + i * 2)..(4 + i * 2 + 2)).unwrap());
-            colours.push(decode_ac(value, maximum_value * 1.0));
+            colours.push(decode_ac(value, maximum_value * punch_value));
         }
     }
 
