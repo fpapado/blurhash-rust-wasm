@@ -6,14 +6,14 @@ use std::convert::TryFrom;
 fn err_if_hash_length_less_than_6() {
     assert_eq!(
         Err(blurhash_wasm::Error::LengthInvalid),
-        decode("L", 40, 30)
+        decode("L", 40, 30, None)
     );
 }
 
 #[test]
 fn decodes_ok() {
     // From the online demo
-    let res = decode("LUDT3yayV?ay%jWBa#a}9Xj[j@fP", 40, 30);
+    let res = decode("LUDT3yayV?ay%jWBa#a}9Xj[j@fP", 40, 30, None);
 
     // From a known encode/decode
     let expected = image::open("tests/data/decode-test-expected.png")
@@ -122,7 +122,7 @@ fn round_trips_ok() {
                 .unwrap()
                 .to_rgba();
 
-            let decode_res = decode(&actual_encode, 32, 32);
+            let decode_res = decode(&actual_encode, 32, 32, None);
 
             match decode_res {
                 Ok(actual_decode) => {
