@@ -1,10 +1,7 @@
 #!/bin/bash
 
 # The initial build
-# Set wee_alloc as a smaller allocator.
-# We do it here instead of Cargo.toml, to keep
-# the default allocator in the native Rust library build.
-wasm-pack build -- --features wee_alloc
+wasm-pack build
 
 echo "Initial size"
 
