@@ -1,4 +1,4 @@
-use blurhash_wasm::{decode, encode};
+use blurhash_wasm::{decode, decode_advanced, encode, EncodingBase};
 use image;
 use std::convert::TryFrom;
 
@@ -29,6 +29,28 @@ fn decodes_ok() {
         Err(_err) => assert!(false),
     }
 }
+
+#[test]
+fn decode_base_64() {
+    // From the online demo
+    let res = decode_advanced("jhLa:38z;;PrXIlmhrKXTdlluHOX", 32, 32, EncodingBase::Base64);
+
+    // From a known encode/decode
+    let expected = image::open("tests/data/decode-test-expected.png")
+        .unwrap()
+        .to_rgba8();
+
+    match res {
+        Ok(img) => {
+            // image::save_buffer("decode-test-out.png", &img, 40, 30, image::RGBA(8));
+            assert_eq!(expected.to_vec(), img);
+        }
+
+        Err(_err) => assert!(false),
+    }
+}
+
+// TODO: decode_corpus
 
 #[test]
 fn encodes_ok() {

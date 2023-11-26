@@ -14,7 +14,7 @@ pub enum Error {
     #[error("the blurhash string must be at least 6 characters long")]
     LengthInvalid,
     #[error("length mismatch (expected {0} based on the flag, found {1})")]
-    LengthMismatch(usize, usize)
+    LengthMismatch(usize, usize),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
@@ -27,21 +27,55 @@ pub enum EncodingError {
 
 // Decode
 
+/**
+ * The encoding base used by a blurhash string.
+ */
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EncodingBase {
+    /// The standard for blurhashes
+    Base83,
+    /// Used in some older/rarer implementations
+    Base64,
+}
+
 /// Decode for WASM target. If an error occurs, the function will throw a `JsError`.
+/// TODO: now that https://github.com/rustwasm/wasm-bindgen/issues/1742 is resolve, maybe we can make this nicer
 #[wasm_bindgen(js_name = "decode")]
 pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
     decode(blur_hash, width, height).map_err(|err| js_sys::Error::new(&err.to_string()).into())
 }
 
+// Decode with base64 strings for WASM target.
+#[wasm_bindgen(js_name = "decode_64")]
+pub fn wasm_decode_64(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
+    decode_advanced(blur_hash, width, height, EncodingBase::Base64)
+        .map_err(|err| js_sys::Error::new(&err.to_string()).into())
+}
+
 pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, Error> {
+    decode_advanced(blur_hash, width, height, EncodingBase::Base83)
+}
+
+pub fn decode_advanced(
+    blur_hash: &str,
+    width: usize,
+    height: usize,
+    encoding_base: EncodingBase,
+) -> Result<Vec<u8>, Error> {
     if blur_hash.len() < 6 {
         return Err(Error::LengthInvalid);
     }
 
+    // Pick the appriate decoder for the basis
+    let decode_with_basis = match encoding_base {
+        EncodingBase::Base83 => decode_base83_string,
+        EncodingBase::Base64 => todo!(),
+    };
+
     // 1. Number of components
     // For a BlurHash with nx components along the X axis and ny components
     // along the Y axis, this is equal to (nx - 1) + (ny - 1) * 9.
-    let size_flag = decode_base83_string(blur_hash.get(0..1).unwrap());
+    let size_flag = decode_with_basis(blur_hash.get(0..1).unwrap());
 
     let num_y = (size_flag / 9) + 1;
     let num_x = (size_flag % 9) + 1;
@@ -57,7 +91,7 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
     // 2. Maximum AC component value, 1 digit.
     // All AC components are scaled by this value.
     // It represents a floating-point value of (max + 1) / 166.
-    let quantised_maximum_value = decode_base83_string(blur_hash.get(1..2).unwrap());
+    let quantised_maximum_value = decode_with_basis(blur_hash.get(1..2).unwrap());
     let maximum_value = ((quantised_maximum_value + 1) as f64) / 166f64;
 
     let mut colours: Vec<[f64; 3]> = Vec::with_capacity(num_x * num_y);
@@ -65,11 +99,11 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
     for i in 0..(num_x * num_y) {
         if i == 0 {
             // 3. Average colour, 4 digits.
-            let value = decode_base83_string(blur_hash.get(2..6).unwrap());
+            let value = decode_with_basis(blur_hash.get(2..6).unwrap());
             colours.push(decode_dc(value));
         } else {
             // 4. AC components, 2 digits each, nx * ny - 1 components in total.
-            let value = decode_base83_string(blur_hash.get((4 + i * 2)..(4 + i * 2 + 2)).unwrap());
+            let value = decode_with_basis(blur_hash.get((4 + i * 2)..(4 + i * 2 + 2)).unwrap());
             colours.push(decode_ac(value, maximum_value * 1.0));
         }
     }
