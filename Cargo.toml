@@ -28,7 +28,7 @@ image = "0.24.7"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"
-image = "0.22.0"
+image = "0.24.7"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.

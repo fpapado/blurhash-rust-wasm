@@ -18,7 +18,7 @@ fn decodes_ok() {
     // From a known encode/decode
     let expected = image::open("tests/data/decode-test-expected.png")
         .unwrap()
-        .to_rgba();
+        .to_rgba8();
 
     match res {
         Ok(img) => {
@@ -35,7 +35,7 @@ fn encodes_ok() {
     // From a known encode/decode
     let input = image::open("tests/data/encode-test-input.jpg")
         .unwrap()
-        .to_rgba();
+        .to_rgba8();
     let (width, height) = input.dimensions();
 
     // From the online demo
@@ -66,7 +66,7 @@ fn encodes_ok_2() {
     // From a known encode/decode
     let input = image::open("tests/data/encode-test-input-2.jpg")
         .unwrap()
-        .to_rgba();
+        .to_rgba8();
     let (width, height) = input.dimensions();
 
     // From the online demo
@@ -98,7 +98,7 @@ fn round_trips_ok() {
     // From a known encode/decode
     let input = image::open("tests/data/encode-test-input.jpg")
         .unwrap()
-        .to_rgba();
+        .to_rgba8();
     let (width, height) = input.dimensions();
 
     // From the online demo
@@ -120,7 +120,7 @@ fn round_trips_ok() {
             assert_eq!(expected_encode, actual_encode);
             let expected_decode = image::open("tests/data/roundtrip-test-input-decode.png")
                 .unwrap()
-                .to_rgba();
+                .to_rgba8();
 
             let decode_res = decode(&actual_encode, 32, 32);
 
