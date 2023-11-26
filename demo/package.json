@@ -6,6 +6,7 @@
   "bin": {
     "create-wasm-app": ".bin/create-wasm-app.js"
   },
+  "TODO": "Specify exports for the build directory",
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "start": "webpack-dev-server"
