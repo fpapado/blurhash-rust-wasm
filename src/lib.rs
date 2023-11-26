@@ -46,8 +46,12 @@ pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u
 }
 
 // Decode with base64 strings for WASM target.
-#[wasm_bindgen(js_name = "decode_64")]
-pub fn wasm_decode_64(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, JsValue> {
+#[wasm_bindgen(js_name = "decode_legacy")]
+pub fn wasm_decode_legacy(
+    blur_hash: &str,
+    width: usize,
+    height: usize,
+) -> Result<Vec<u8>, JsValue> {
     decode_advanced(blur_hash, width, height, EncodingBase::Base64)
         .map_err(|err| js_sys::Error::new(&err.to_string()).into())
 }
@@ -56,6 +60,7 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
     decode_advanced(blur_hash, width, height, EncodingBase::Base83)
 }
 
+// TODO: Consider making this decode_advanced, decode_with_basis
 pub fn decode_advanced(
     blur_hash: &str,
     width: usize,
@@ -69,7 +74,12 @@ pub fn decode_advanced(
     // Pick the appriate decoder for the basis
     let decode_with_basis = match encoding_base {
         EncodingBase::Base83 => decode_base83_string,
-        EncodingBase::Base64 => todo!(),
+        EncodingBase::Base64 => decode_base64_string,
+    };
+
+    let value_ceiling_for_basis = match encoding_base {
+        EncodingBase::Base83 => 166f64,
+        EncodingBase::Base64 => 128f64,
     };
 
     // 1. Number of components
@@ -77,8 +87,15 @@ pub fn decode_advanced(
     // along the Y axis, this is equal to (nx - 1) + (ny - 1) * 9.
     let size_flag = decode_with_basis(blur_hash.get(0..1).unwrap());
 
-    let num_y = (size_flag / 9) + 1;
-    let num_x = (size_flag % 9) + 1;
+    let num_y = match encoding_base {
+        EncodingBase::Base83 => (size_flag / 9) + 1,
+        EncodingBase::Base64 => (size_flag >> 3) + 1,
+    };
+
+    let num_x = match encoding_base {
+        EncodingBase::Base83 => (size_flag % 9) + 1,
+        EncodingBase::Base64 => (size_flag & 7) + 1,
+    };
 
     // Validate that the number of digits is what we expect:
     // 1 (size flag) + 1 (maximum value) + 4 (average colour) + (num_x - num_y - 1) components * 2 digits each
@@ -92,7 +109,7 @@ pub fn decode_advanced(
     // All AC components are scaled by this value.
     // It represents a floating-point value of (max + 1) / 166.
     let quantised_maximum_value = decode_with_basis(blur_hash.get(1..2).unwrap());
-    let maximum_value = ((quantised_maximum_value + 1) as f64) / 166f64;
+    let maximum_value = ((quantised_maximum_value + 1) as f64) / value_ceiling_for_basis;
 
     let mut colours: Vec<[f64; 3]> = Vec::with_capacity(num_x * num_y);
 
@@ -373,11 +390,25 @@ static ENCODE_CHARACTERS: [char; 83] = [
     ']', '^', '_', '{', '|', '}', '~',
 ];
 
+static ENCODE_CHARACTERS_64: [char; 64] = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+    'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B',
+    'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
+    'V', 'W', 'X', 'Y', 'Z', ':', ';',
+];
+
 fn decode_base83_string(string: &str) -> usize {
     string
         .chars()
         .filter_map(|character| ENCODE_CHARACTERS.iter().position(|&c| c == character))
         .fold(0, |value, digit| value * 83 + digit)
+}
+
+fn decode_base64_string(string: &str) -> usize {
+    string
+        .chars()
+        .filter_map(|character| ENCODE_CHARACTERS_64.iter().position(|&c| c == character))
+        .fold(0, |value, digit| value * 64 + digit)
 }
 
 fn encode_base83_string(value: usize, length: u32) -> String {
@@ -395,6 +426,10 @@ mod tests {
     fn it_decodes_size_flag() {
         assert_eq!(21, decode_base83_string("L"));
         assert_eq!(0, decode_base83_string("0"));
+        assert_eq!(45, decode_base83_string("j"));
+
+        // base65
+        assert_eq!(19, decode_base64_string("j"));
     }
     #[test]
     fn decodes_size_0_out_of_range() {
