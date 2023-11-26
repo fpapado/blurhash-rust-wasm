@@ -32,6 +32,15 @@ image = "0.22.0"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.
-# Did not seem to make a difference in our size tests
+# This did not seem to make a difference in our size tests
 # opt-level = 's'
 lto = true
+
+# wasm-pack specific options
+[package.metadata.wasm-pack.profile.release]
+# Array of strings which are explicit arguments to pass to `wasm-opt`. For
+# example `['-Os']` would optimize for size while `['-O4']` would execute very
+# expensive optimizations passes
+# In tests, for this package, -O4 had the smallest code size, though differences
+# between all the levels were small (less than 1kB, less than 0.3kB gzipped)
+wasm-opt = ['-O4']
