@@ -7,14 +7,14 @@ use thiserror::*;
 use wasm_bindgen::prelude::*;
 
 // TODO: Add adjustable 'punch'
-// TODO: Avoid panicing infrasturcture (checked division, .get, no unwrap)
+// TODO: Avoid panicing infrasturcture (checked division, .get, no unwrap) (or use wasm-snip)
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
 pub enum Error {
-    #[error("the length of the hash is invalid")]
+    #[error("the blurhash string must be at least 6 characters long")]
     LengthInvalid,
-    #[error("the specified number of components does not match the actual length")]
-    LengthMismatch,
+    #[error("length mismatch (expected {0} based on the flag, found {1})")]
+    LengthMismatch(usize, usize)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
@@ -51,7 +51,7 @@ pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, E
     let expected_digits = 4 + 2 * num_x * num_y;
 
     if blur_hash.len() != expected_digits {
-        return Err(Error::LengthMismatch);
+        return Err(Error::LengthMismatch(expected_digits, blur_hash.len()));
     }
 
     // 2. Maximum AC component value, 1 digit.
@@ -197,9 +197,9 @@ pub fn encode(
                 bytes_per_pixel,
                 0,
                 |a, b| {
-                    (normalisation
+                    normalisation
                         * f64::cos((PI * x as f64 * a) / width as f64)
-                        * f64::cos((PI * y as f64 * b) / height as f64))
+                        * f64::cos((PI * y as f64 * b) / height as f64)
                 },
             );
 
