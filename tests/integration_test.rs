@@ -1,4 +1,4 @@
-use blurhash_wasm::{decode, decode_advanced, encode, EncodingBase};
+use blurhash_wasm::{decode, decode_legacy_64, encode};
 use image;
 use std::convert::TryFrom;
 
@@ -31,8 +31,8 @@ fn decodes_ok() {
 }
 
 #[test]
-fn decode_base_64() {
-    let res = decode_advanced("jhLa:38z;;PrXIlmhrKXTdlluHOX", 32, 32, EncodingBase::Base64);
+fn decode_legacy_64_ok() {
+    let res = decode_legacy_64("jhLa:38z;;PrXIlmhrKXTdlluHOX", 32, 32);
     assert!(res.is_ok())
 }
 

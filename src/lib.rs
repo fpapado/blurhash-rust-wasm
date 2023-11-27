@@ -45,27 +45,32 @@ pub fn wasm_decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u
     decode(blur_hash, width, height).map_err(|err| js_sys::Error::new(&err.to_string()).into())
 }
 
-// Decode with base64 strings for WASM target.
-#[wasm_bindgen(js_name = "decode_legacy")]
+// Decode with legacy base64 strings for WASM target.
+#[wasm_bindgen(js_name = "decodeLegacy64")]
 pub fn wasm_decode_legacy(
     blur_hash: &str,
     width: usize,
     height: usize,
 ) -> Result<Vec<u8>, JsValue> {
-    decode_advanced(blur_hash, width, height, EncodingBase::Base64)
+    decode_legacy_64(blur_hash, width, height)
         .map_err(|err| js_sys::Error::new(&err.to_string()).into())
 }
 
 pub fn decode(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, Error> {
-    decode_advanced(blur_hash, width, height, EncodingBase::Base83)
+    decode_with_basis(EncodingBase::Base83, blur_hash, width, height)
 }
 
-// TODO: Consider making this decode_advanced, decode_with_basis
-pub fn decode_advanced(
+pub fn decode_legacy_64(blur_hash: &str, width: usize, height: usize) -> Result<Vec<u8>, Error> {
+    decode_with_basis(EncodingBase::Base64, blur_hash, width, height)
+}
+
+// TODO: Could turn this into decode_advanced, which takes parameters for
+// encoding base and size decoding
+pub fn decode_with_basis(
+    encoding_base: EncodingBase,
     blur_hash: &str,
     width: usize,
     height: usize,
-    encoding_base: EncodingBase,
 ) -> Result<Vec<u8>, Error> {
     if blur_hash.len() < 6 {
         return Err(Error::LengthInvalid);
@@ -100,9 +105,10 @@ pub fn decode_advanced(
     // Validate that the number of digits is what we expect:
     // 1 (size flag) + 1 (maximum value) + 4 (average colour) + (num_x - num_y - 1) components * 2 digits each
     let expected_digits = 4 + 2 * num_x * num_y;
+    let actual_digits = blur_hash.len();
 
-    if blur_hash.len() != expected_digits {
-        return Err(Error::LengthMismatch(expected_digits, blur_hash.len()));
+    if actual_digits != expected_digits {
+        return Err(Error::LengthMismatch(expected_digits, actual_digits));
     }
 
     // 2. Maximum AC component value, 1 digit.
